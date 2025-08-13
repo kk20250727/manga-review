@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
-  request: Request,
+  request: NextRequest, // 💡 ここを 'Request' から 'NextRequest' に変更しました
   context: { params: { id: string } }
 ) {
   try {
