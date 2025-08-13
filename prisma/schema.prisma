@@ -1,0 +1,111 @@
+// Prisma schema for SQLite
+// Run: npx prisma generate && npx prisma db push
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Book {
+  id              Int      @id @default(autoincrement())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  title           String
+  author          String
+  publisherName   String   @default("")
+  itemCaption     String   @default("")
+  largeImageUrl   String   @default("")
+  itemUrl         String   @default("")
+  isbn            String   @unique
+  googleVolumeId  String   @unique
+}
+
+model Series {
+  id             Int       @id @default(autoincrement())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  title          String
+  englishTitle   String    @default("")
+  romajiTitle    String    @default("")
+  normalizedKey  String    @unique // 検索/同一性用（小文字・空白/記号除去）
+  description    String    @default("")
+  coverImageUrl  String    @default("")
+  publisherName  String    @default("")
+
+  volumes        Volume[]
+  creators       SeriesCreator[]
+  aliases        SeriesAlias[]
+  reviews        Review[]
+}
+
+model Volume {
+  id             Int       @id @default(autoincrement())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  seriesId       Int
+  series         Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  title          String
+  volumeNumber   Int?      // 1,2,3... 解析できない場合はnull
+  isbn           String?   @unique
+  googleVolumeId String    @unique
+  itemUrl        String    @default("")
+  imageUrl       String    @default("")
+  publisherName  String    @default("")
+  description    String    @default("")
+
+  reviews        Review[]
+}
+
+model Creator {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  series    SeriesCreator[]
+}
+
+model SeriesCreator {
+  seriesId  Int
+  creatorId Int
+  role      String   // 原作/作画/著者など
+
+  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  creator   Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@id([seriesId, creatorId, role])
+}
+
+model SeriesAlias {
+  id        Int      @id @default(autoincrement())
+  seriesId  Int
+  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  type      String   // alias | english | romaji | other
+  value     String
+
+  @@unique([seriesId, type, value])
+}
+
+model Review {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  rating      Int       // 1-5
+  comment     String    @default("")
+  nickname    String    @default("")
+
+  seriesId    Int?      
+  series      Series?   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  volumeId    Int?
+  volume      Volume?   @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+}
