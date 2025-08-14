@@ -5,11 +5,13 @@ import { searchRakutenBooks } from '../../lib/rakuten.js';
 import Link from 'next/link';
 
 export default function SearchPage() {
+  // 検索状態管理: 検索語、検索モード（Google Books API または サイト内インデックス）、結果、ローディング状態
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchMode, setSearchMode] = useState('google');
+  const [searchMode, setSearchMode] = useState('google'); // 'google' or 'site'
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // 検索実行処理: モードに応じて異なるAPIを呼び出し
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     
@@ -17,9 +19,11 @@ export default function SearchPage() {
     try {
       let res;
       if (searchMode === 'google') {
+        // Google Books APIを使用した外部検索（広範囲の書籍情報）
         res = await searchRakutenBooks(searchTerm);
         setResults(res);
       } else {
+        // サイト内のMeilisearchインデックスを使用した内部検索（レビュー・評価付き）
         const response = await fetch(`/api/search?q=${encodeURIComponent(searchTerm)}`);
         const data = await response.json();
         res = data.items || [];
@@ -33,6 +37,7 @@ export default function SearchPage() {
     }
   };
 
+  // Enterキーでの検索実行
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
@@ -46,7 +51,7 @@ export default function SearchPage() {
         <p className="text-xl text-gray-600">Find your next favorite series</p>
       </div>
 
-      {/* Search Tabs */}
+      {/* 検索モード切り替えタブ: Google Books API vs サイト内インデックス */}
       <div className="flex justify-center mb-6">
         <div className="bg-gray-100 rounded-lg p-1">
           <button
@@ -72,7 +77,7 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Search Input */}
+      {/* 検索入力フォーム */}
       <div className="max-w-2xl mx-auto mb-8">
         <div className="flex gap-2">
           <input
@@ -91,6 +96,7 @@ export default function SearchPage() {
             {isLoading ? 'Searching...' : 'Search'}
           </button>
         </div>
+        {/* 検索モードの説明文 */}
         <p className="text-sm text-gray-500 mt-2 text-center">
           {searchMode === 'google' 
             ? 'Search through Google Books database for manga information'
@@ -99,7 +105,7 @@ export default function SearchPage() {
         </p>
       </div>
 
-      {/* Loading State */}
+      {/* ローディング状態の表示 */}
       {isLoading && (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -107,7 +113,7 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* Search Results */}
+      {/* 検索結果の表示 */}
       {!isLoading && results.length > 0 && (
         <div>
           <h2 className="text-2xl font-semibold mb-6">
@@ -117,7 +123,7 @@ export default function SearchPage() {
             {results.map((item, index) => (
               <div key={index} className="bg-white border rounded-lg p-6 hover:shadow-md transition-shadow">
                 <div className="flex gap-6">
-                  {/* Image */}
+                  {/* 書籍画像の表示（存在しない場合はプレースホルダー） */}
                   <div className="flex-shrink-0">
                     <div className="w-24 h-32 bg-gray-200 rounded overflow-hidden">
                       {item.largeImageUrl ? (
@@ -134,8 +140,9 @@ export default function SearchPage() {
                     </div>
                   </div>
 
-                  {/* Content */}
+                  {/* 書籍情報の表示 */}
                   <div className="flex-1">
+                    {/* タイトル（サイト内検索の場合は詳細ページへのリンク） */}
                     <h3 className="text-xl font-semibold mb-2 text-blue-600">
                       {searchMode === 'site' && item.type === 'series' ? (
                         <Link href={`/series/${item.id}`} className="hover:underline">
@@ -146,30 +153,35 @@ export default function SearchPage() {
                       )}
                     </h3>
                     
+                    {/* 著者情報 */}
                     {item.author && (
                       <p className="text-gray-600 mb-2">
                         <span className="font-medium">Author:</span> {item.author}
                       </p>
                     )}
                     
+                    {/* 出版社情報 */}
                     {item.publisherName && (
                       <p className="text-gray-600 mb-2">
                         <span className="font-medium">Publisher:</span> {item.publisherName}
                       </p>
                     )}
                     
+                    {/* 説明文（Google Books API） */}
                     {item.description && (
                       <p className="text-gray-700 mb-3 line-clamp-3">
                         {item.description}
                       </p>
                     )}
                     
+                    {/* あらすじ（Google Books API） */}
                     {item.itemCaption && (
                       <p className="text-gray-700 mb-3 line-clamp-3">
                         {item.itemCaption}
                       </p>
                     )}
 
+                    {/* サイト内検索結果の追加情報（巻数、著者数） */}
                     {searchMode === 'site' && item.type === 'series' && (
                       <div className="flex gap-4 text-sm text-gray-500">
                         {item.volumes && (
@@ -181,6 +193,7 @@ export default function SearchPage() {
                       </div>
                     )}
 
+                    {/* 外部リンク（Google Books API） */}
                     {item.itemUrl && (
                       <a
                         href={item.itemUrl}
@@ -199,7 +212,7 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* No Results */}
+      {/* 検索結果が0件の場合の表示 */}
       {!isLoading && results.length === 0 && searchTerm && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">🔍</div>
@@ -213,7 +226,7 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* Initial State */}
+      {/* 初期状態（検索前）の表示 */}
       {!isLoading && results.length === 0 && !searchTerm && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">📚</div>
@@ -221,6 +234,7 @@ export default function SearchPage() {
           <p className="text-gray-500 mb-6">
             Enter a manga title, author, or series name to get started
           </p>
+          {/* 人気検索キーワードのサジェスト */}
           <div className="flex flex-wrap justify-center gap-2 text-sm">
             <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">ONE PIECE</span>
             <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">進撃の巨人</span>

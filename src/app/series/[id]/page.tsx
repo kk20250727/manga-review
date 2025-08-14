@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+// シリーズの巻情報の型定義
 type SeriesVolume = {
   id: number;
   title: string;
@@ -14,6 +15,7 @@ type SeriesVolume = {
   description: string;
 };
 
+// シリーズの著者情報の型定義
 type SeriesCreator = {
   role: string;
   creator: {
@@ -21,12 +23,14 @@ type SeriesCreator = {
   };
 };
 
+// シリーズの別名タイトルの型定義
 type SeriesAlias = {
   id: number;
   alias: string;
   lang: string | null;
 };
 
+// シリーズ詳細情報の型定義
 type SeriesDetail = {
   id: number;
   title: string;
@@ -40,6 +44,7 @@ type SeriesDetail = {
   aliases: SeriesAlias[];
 };
 
+// レビュー情報の型定義
 type Review = {
   id: number;
   rating: number;
@@ -49,15 +54,18 @@ type Review = {
 };
 
 export default function SeriesDetailPage({ params }: { params: { id: string } }) {
+  // 状態管理: シリーズ情報、レビュー一覧、ローディング状態、新規レビュー入力
   const [series, setSeries] = useState<SeriesDetail | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '', nickname: '' });
   const [submitting, setSubmitting] = useState(false);
 
+  // コンポーネントマウント時にシリーズ情報とレビューを並行取得
   useEffect(() => {
     const loadData = async () => {
       try {
+        // シリーズ詳細とレビューを並行で取得（パフォーマンス向上）
         const [seriesRes, reviewsRes] = await Promise.all([
           fetch(`/api/series/${params.id}`),
           fetch(`/api/reviews?seriesId=${params.id}`),
@@ -75,8 +83,10 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
     loadData();
   }, [params.id]);
 
+  // レビュー投稿処理: フォーム送信時のバリデーションとAPI呼び出し
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // 必須項目のチェック
     if (!newReview.comment.trim() || !newReview.nickname.trim()) return;
 
     setSubmitting(true);
@@ -88,7 +98,9 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
       });
       if (res.ok) {
         const review = await res.json();
+        // 新規レビューを先頭に追加（リアルタイム更新）
         setReviews([review.item, ...reviews]);
+        // フォームをリセット
         setNewReview({ rating: 5, comment: '', nickname: '' });
       }
     } catch (error) {
@@ -98,9 +110,11 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
     }
   };
 
+  // ローディング状態とエラー状態の表示
   if (loading) return <div className="text-center p-8">Loading...</div>;
   if (!series) return <div className="text-center p-8">Series not found</div>;
 
+  // レビューの平均評価を計算（星5つ評価）
   const averageRating = reviews.length > 0 
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length 
     : 0;
@@ -108,7 +122,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="grid md:grid-cols-3 gap-8">
-        {/* Left: Cover and Info */}
+        {/* 左側: 表紙画像と基本情報（スティッキーポジションで固定） */}
         <div className="md:col-span-1">
           <div className="sticky top-6">
             <div className="mb-6">
@@ -123,6 +137,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
             
             <div className="space-y-4">
               <h1 className="text-2xl font-bold">{series.title}</h1>
+              {/* 英語タイトルとローマ字タイトルの表示（存在する場合のみ） */}
               {series.englishTitle && (
                 <div className="text-lg text-gray-600">{series.englishTitle}</div>
               )}
@@ -133,6 +148,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
                 <div className="text-sm text-gray-500">{series.publisherName}</div>
               )}
               
+              {/* 著者情報の表示 */}
               {series.creators.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2">Creators</h3>
@@ -146,6 +162,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
                 </div>
               )}
 
+              {/* 別名タイトルの表示 */}
               {series.aliases.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2">Alternative Titles</h3>
@@ -159,6 +176,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
                 </div>
               )}
 
+              {/* 平均評価とレビュー数の表示 */}
               <div className="flex items-center gap-2">
                 <div className="text-2xl font-bold">{averageRating.toFixed(1)}</div>
                 <div className="text-gray-500">({reviews.length} reviews)</div>
@@ -167,9 +185,9 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
           </div>
         </div>
 
-        {/* Right: Content */}
+        {/* 右側: 詳細情報、巻一覧、レビュー */}
         <div className="md:col-span-2 space-y-8">
-          {/* Description */}
+          {/* シリーズの説明文 */}
           {series.description && (
             <div>
               <h2 className="text-xl font-semibold mb-4">Description</h2>
@@ -177,7 +195,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
             </div>
           )}
 
-          {/* Volumes */}
+          {/* 巻一覧のグリッド表示（レスポンシブ対応） */}
           {series.volumes.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold mb-4">Volumes ({series.volumes.length})</h2>
@@ -210,13 +228,14 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
             </div>
           )}
 
-          {/* Reviews */}
+          {/* レビューセクション: 投稿フォームと一覧表示 */}
           <div>
             <h2 className="text-xl font-semibold mb-4">Reviews</h2>
             
-            {/* Review Form */}
+            {/* レビュー投稿フォーム */}
             <form onSubmit={handleReviewSubmit} className="mb-6 p-4 border rounded-lg">
               <div className="grid md:grid-cols-2 gap-4 mb-4">
+                {/* 評価選択（5段階） */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Rating</label>
                   <select
@@ -229,6 +248,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
                     ))}
                   </select>
                 </div>
+                {/* ニックネーム入力 */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Nickname</label>
                   <input
@@ -241,6 +261,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
                   />
                 </div>
               </div>
+              {/* コメント入力 */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Comment</label>
                 <textarea
@@ -252,6 +273,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
                   required
                 />
               </div>
+              {/* 送信ボタン（送信中は無効化） */}
               <button
                 type="submit"
                 disabled={submitting}
@@ -261,11 +283,12 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
               </button>
             </form>
 
-            {/* Review List */}
+            {/* レビュー一覧表示（新しい順） */}
             <div className="space-y-4">
               {reviews.map((review) => (
                 <div key={review.id} className="border rounded-lg p-4">
                   <div className="flex items-center gap-4 mb-2">
+                    {/* 星評価の視覚的表示 */}
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span key={star} className={star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}>

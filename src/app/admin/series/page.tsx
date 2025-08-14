@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+// シリーズの巻情報の型定義
 type SeriesVolume = {
   id: number;
   title: string;
@@ -13,6 +14,7 @@ type SeriesVolume = {
   itemUrl: string;
 };
 
+// シリーズの著者情報の型定義
 type SeriesCreator = {
   role: string;
   creator: {
@@ -20,12 +22,14 @@ type SeriesCreator = {
   };
 };
 
+// シリーズの別名タイトルの型定義
 type SeriesAlias = {
   id: number;
   alias: string;
   lang: string | null;
 };
 
+// シリーズ情報の型定義
 type Series = {
   id: number;
   title: string;
@@ -40,6 +44,7 @@ type Series = {
 };
 
 export default function SeriesAdminPage() {
+  // 状態管理: 検索語、ページ番号、ページサイズ、シリーズ一覧、総件数、ローディング状態
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -47,10 +52,12 @@ export default function SeriesAdminPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // データ取得処理: 検索条件、ページネーション、ページサイズの変更時に実行
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // APIパラメータを構築（検索語、ページ、ページサイズ）
         const params = new URLSearchParams({
           q,
           page: page.toString(),
@@ -69,11 +76,13 @@ export default function SeriesAdminPage() {
     fetchData();
   }, [q, page, pageSize]);
 
+  // 検索実行処理: フォーム送信時にページを1にリセット
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
   };
 
+  // 総ページ数を計算
   const totalPages = Math.ceil(total / pageSize);
 
   return (
@@ -88,7 +97,7 @@ export default function SeriesAdminPage() {
         </Link>
       </div>
 
-      {/* Search Form */}
+      {/* 検索フォーム: タイトル、説明、出版社での検索 */}
       <form onSubmit={handleSearch} className="mb-6">
         <div className="flex gap-4">
           <input
@@ -107,7 +116,7 @@ export default function SeriesAdminPage() {
         </div>
       </form>
 
-      {/* Stats */}
+      {/* 統計情報表示: 総件数、現在ページ、ページサイズ選択 */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <div className="flex gap-8 text-sm">
           <div>
@@ -131,7 +140,7 @@ export default function SeriesAdminPage() {
         </div>
       </div>
 
-      {/* Loading */}
+      {/* ローディング状態の表示 */}
       {loading && (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -139,13 +148,13 @@ export default function SeriesAdminPage() {
         </div>
       )}
 
-      {/* Series List */}
+      {/* シリーズ一覧の表示 */}
       {!loading && (
         <div className="space-y-6">
           {items.map((series) => (
             <div key={series.id} className="bg-white border rounded-lg p-6 hover:shadow-md transition-shadow">
               <div className="flex gap-6">
-                {/* Cover Image */}
+                {/* 表紙画像の表示（存在しない場合はプレースホルダー） */}
                 <div className="flex-shrink-0">
                   <div className="w-32 h-48 bg-gray-200 rounded overflow-hidden">
                     {series.coverImageUrl ? (
@@ -164,15 +173,17 @@ export default function SeriesAdminPage() {
                   </div>
                 </div>
 
-                {/* Series Info */}
+                {/* シリーズ情報の表示 */}
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-4">
                     <div>
+                      {/* タイトル（詳細ページへのリンク付き） */}
                       <h2 className="text-2xl font-bold text-blue-600 mb-2">
                         <Link href={`/series/${series.id}`} className="hover:underline">
                           {series.title}
                         </Link>
                       </h2>
+                      {/* 英語タイトルとローマ字タイトル（存在する場合のみ） */}
                       {series.englishTitle && (
                         <div className="text-lg text-gray-600 mb-1">{series.englishTitle}</div>
                       )}
@@ -183,6 +194,7 @@ export default function SeriesAdminPage() {
                         <div className="text-sm text-gray-500">{series.publisherName}</div>
                       )}
                     </div>
+                    {/* シリーズIDの表示 */}
                     <div className="text-right">
                       <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
                         #{series.id}
@@ -190,16 +202,16 @@ export default function SeriesAdminPage() {
                     </div>
                   </div>
 
-                  {/* Description */}
+                  {/* シリーズの説明文（3行まで表示、オーバーフローは省略） */}
                   {series.description && (
                     <p className="text-gray-700 mb-4 line-clamp-3">
                       {series.description}
                     </p>
                   )}
 
-                  {/* Details Grid */}
+                  {/* 詳細情報のグリッド表示（巻、著者、別名） */}
                   <div className="grid md:grid-cols-3 gap-6">
-                    {/* Volumes */}
+                    {/* 巻一覧（最初の3巻のみ表示、残りは件数表示） */}
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Volumes ({series.volumes.length})</h3>
                       <div className="space-y-2">
@@ -217,7 +229,7 @@ export default function SeriesAdminPage() {
                       </div>
                     </div>
 
-                    {/* Creators */}
+                    {/* 著者情報 */}
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Creators ({series.creators.length})</h3>
                       <div className="space-y-1">
@@ -229,7 +241,7 @@ export default function SeriesAdminPage() {
                       </div>
                     </div>
 
-                    {/* Aliases */}
+                    {/* 別名タイトル（最初の3件のみ表示、残りは件数表示） */}
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Alternative Titles ({series.aliases.length})</h3>
                       <div className="space-y-1">
@@ -247,7 +259,7 @@ export default function SeriesAdminPage() {
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* アクションボタン: 詳細表示、編集 */}
                   <div className="flex gap-3 mt-6">
                     <Link
                       href={`/series/${series.id}`}
@@ -266,9 +278,10 @@ export default function SeriesAdminPage() {
         </div>
       )}
 
-      {/* Pagination */}
+      {/* ページネーション: 前後ページ移動、ページ番号選択 */}
       {!loading && totalPages > 1 && (
         <div className="flex justify-center items-center gap-4 mt-8">
+          {/* 前のページボタン */}
           <button
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
@@ -277,6 +290,7 @@ export default function SeriesAdminPage() {
             Previous
           </button>
           
+          {/* ページ番号の表示（最大5ページ分、現在ページ周辺を表示） */}
           <div className="flex gap-2">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
@@ -297,6 +311,7 @@ export default function SeriesAdminPage() {
             })}
           </div>
           
+          {/* 次のページボタン */}
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
@@ -307,7 +322,7 @@ export default function SeriesAdminPage() {
         </div>
       )}
 
-      {/* No Results */}
+      {/* 検索結果が0件の場合の表示 */}
       {!loading && items.length === 0 && q && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">🔍</div>

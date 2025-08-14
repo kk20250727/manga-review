@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+// 書籍情報の型定義
 type Book = {
   id: number;
   title: string;
@@ -16,6 +17,7 @@ type Book = {
 };
 
 export default function AdminPage() {
+  // 状態管理: 検索語、ページ番号、ページサイズ、書籍一覧、総件数、ローディング状態
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -23,10 +25,12 @@ export default function AdminPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // データ取得処理: 検索条件、ページネーション、ページサイズの変更時に実行
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // APIパラメータを構築（検索語、ページ、ページサイズ）
         const params = new URLSearchParams({
           q,
           page: page.toString(),
@@ -45,11 +49,13 @@ export default function AdminPage() {
     fetchData();
   }, [q, page, pageSize]);
 
+  // 検索実行処理: フォーム送信時にページを1にリセット
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
   };
 
+  // 総ページ数を計算
   const totalPages = Math.ceil(total / pageSize);
 
   return (
@@ -59,8 +65,9 @@ export default function AdminPage() {
         <p className="text-gray-600">Manage manga data and system settings</p>
       </div>
 
-      {/* Quick Stats */}
+      {/* クイック統計: 4つの主要指標をカード形式で表示 */}
       <div className="grid md:grid-cols-4 gap-6 mb-8">
+        {/* 総書籍数 */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
           <div className="flex items-center">
             <div className="bg-blue-100 p-3 rounded-full">
@@ -75,6 +82,7 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* シリーズ数（ハードコードされた値、将来的にはAPIから取得） */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-6">
           <div className="flex items-center">
             <div className="bg-green-100 p-3 rounded-full">
@@ -89,6 +97,7 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* 巻数（ハードコードされた値、将来的にはAPIから取得） */}
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
           <div className="flex items-center">
             <div className="bg-purple-100 p-3 rounded-full">
@@ -103,6 +112,7 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* レビュー数（ハードコードされた値、将来的にはAPIから取得） */}
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
           <div className="flex items-center">
             <div className="bg-orange-100 p-3 rounded-full">
@@ -118,8 +128,9 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* クイックアクション: 主要機能へのナビゲーション */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
+        {/* シリーズ管理へのリンク */}
         <Link
           href="/admin/series"
           className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
@@ -137,6 +148,7 @@ export default function AdminPage() {
           </div>
         </Link>
 
+        {/* 検索機能へのリンク */}
         <Link
           href="/search"
           className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
@@ -154,6 +166,7 @@ export default function AdminPage() {
           </div>
         </Link>
 
+        {/* サイト表示へのリンク */}
         <Link
           href="/"
           className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
@@ -172,14 +185,14 @@ export default function AdminPage() {
         </Link>
       </div>
 
-      {/* Books Management */}
+      {/* 書籍管理セクション: Google Books APIからのデータ管理 */}
       <div className="bg-white border rounded-lg">
         <div className="p-6 border-b">
           <h2 className="text-xl font-semibold">Books Management</h2>
           <p className="text-gray-600">Manage individual book records from Google Books API</p>
         </div>
 
-        {/* Search Form */}
+        {/* 検索フォーム: タイトル、著者、出版社での検索 */}
         <div className="p-6 border-b">
           <form onSubmit={handleSearch} className="flex gap-4">
             <input
@@ -198,7 +211,7 @@ export default function AdminPage() {
           </form>
         </div>
 
-        {/* Stats */}
+        {/* 統計情報表示: 総件数、現在ページ、ページサイズ選択 */}
         <div className="px-6 py-4 bg-gray-50 border-b">
           <div className="flex gap-8 text-sm">
             <div>
@@ -222,7 +235,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Loading */}
+        {/* ローディング状態の表示 */}
         {loading && (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -230,12 +243,13 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Books List */}
+        {/* 書籍一覧の表示 */}
         {!loading && (
           <div className="p-6">
             <div className="space-y-4">
               {items.map((book) => (
                 <div key={book.id} className="flex gap-4 p-4 border rounded-lg hover:bg-gray-50">
+                  {/* 書籍画像の表示（存在しない場合はプレースホルダー） */}
                   <div className="flex-shrink-0">
                     <div className="w-20 h-28 bg-gray-200 rounded overflow-hidden">
                       {book.largeImageUrl ? (
@@ -253,26 +267,32 @@ export default function AdminPage() {
                       )}
                     </div>
                   </div>
+                  {/* 書籍情報の表示 */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-lg mb-1 truncate">{book.title}</h3>
+                    {/* 著者情報 */}
                     {book.author && (
                       <p className="text-gray-600 mb-1">
                         <span className="font-medium">Author:</span> {book.author}
                       </p>
                     )}
+                    {/* 出版社情報 */}
                     {book.publisherName && (
                       <p className="text-gray-600 mb-1">
                         <span className="font-medium">Publisher:</span> {book.publisherName}
                       </p>
                     )}
+                    {/* ISBN情報 */}
                     {book.isbn && (
                       <p className="text-gray-600 mb-2">
                         <span className="font-medium">ISBN:</span> {book.isbn}
                       </p>
                     )}
+                    {/* あらすじ（2行まで表示、オーバーフローは省略） */}
                     {book.itemCaption && (
                       <p className="text-gray-700 text-sm line-clamp-2">{book.itemCaption}</p>
                     )}
+                    {/* 外部リンク（Google Books等） */}
                     {book.itemUrl && (
                       <a
                         href={book.itemUrl}
@@ -290,10 +310,11 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Pagination */}
+        {/* ページネーション: 前後ページ移動、ページ番号選択 */}
         {!loading && totalPages > 1 && (
           <div className="px-6 py-4 border-t bg-gray-50">
             <div className="flex justify-center items-center gap-4">
+              {/* 前のページボタン */}
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
@@ -302,6 +323,7 @@ export default function AdminPage() {
                 Previous
               </button>
               
+              {/* ページ番号の表示（最大5ページ分、現在ページ周辺を表示） */}
               <div className="flex gap-2">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
@@ -322,6 +344,7 @@ export default function AdminPage() {
                 })}
               </div>
               
+              {/* 次のページボタン */}
               <button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
@@ -333,7 +356,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* No Results */}
+        {/* 検索結果が0件の場合の表示 */}
         {!loading && items.length === 0 && q && (
           <div className="p-6 text-center">
             <div className="text-gray-400 text-4xl mb-4">🔍</div>
