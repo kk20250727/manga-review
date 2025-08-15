@@ -1,111 +1,306 @@
-// Prisma schema for SQLite
-// Run: npx prisma generate && npx prisma db push
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+// ユーザー情報を管理するテーブル
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  username  String   @unique
+  password  String   // ハッシュ化されたパスワード
+  avatar    String?  // アバター画像URL
+  bio       String?  // 自己紹介
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  reviews     Review[]
+  favorites   Favorite[]
+  follows     Follow[]     @relation("UserFollows")
+  followers   Follow[]     @relation("UserFollowers")
+  posts       ForumPost[]
+  comments    ForumComment[]
+  likes       ReviewLike[]
+
+  @@map("users")
 }
 
-model Book {
-  id              Int      @id @default(autoincrement())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+// ジャンル情報を管理するテーブル
+model Genre {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  color       String?  // ジャンル表示用の色コード
+  icon        String?  // ジャンルアイコン
+  createdAt   DateTime @default(now())
 
-  title           String
-  author          String
-  publisherName   String   @default("")
-  itemCaption     String   @default("")
-  largeImageUrl   String   @default("")
-  itemUrl         String   @default("")
-  isbn            String   @unique
-  googleVolumeId  String   @unique
+  // リレーション
+  seriesGenres SeriesGenre[]
+
+  @@map("genres")
 }
 
+// タグ情報を管理するテーブル
+model Tag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  category  String?  // タグのカテゴリ（例：テーマ、キャラクター、設定など）
+  createdAt DateTime @default(now())
+
+  // リレーション
+  seriesTags SeriesTag[]
+
+  @@map("tags")
+}
+
+// シリーズとジャンルの関連テーブル（多対多）
+model SeriesGenre {
+  id        Int      @id @default(autoincrement())
+  seriesId  Int
+  genreId   Int
+  createdAt DateTime @default(now())
+
+  // リレーション
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  genre  Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, genreId])
+  @@map("series_genres")
+}
+
+// シリーズとタグの関連テーブル（多対多）
+model SeriesTag {
+  id        Int      @id @default(autoincrement())
+  seriesId  Int
+  tagId     Int
+  createdAt DateTime @default(now())
+
+  // リレーション
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  tag   Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, tagId])
+  @@map("series_tags")
+}
+
+// お気に入り管理テーブル
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  seriesId  Int
+  createdAt DateTime @default(now())
+
+  // リレーション
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seriesId])
+  @@map("favorites")
+}
+
+// ユーザーフォロー管理テーブル
+model Follow {
+  id         Int      @id @default(autoincrement())
+  followerId Int      // フォローする人
+  followingId Int     // フォローされる人
+  createdAt  DateTime @default(now())
+
+  // リレーション
+  follower  User @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+// レビューへのいいね管理テーブル
+model ReviewLike {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  reviewId  Int
+  createdAt DateTime @default(now())
+
+  // リレーション
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reviewId])
+  @@map("review_likes")
+}
+
+// フォーラム投稿テーブル
+model ForumPost {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  content   String
+  category  String   // 投稿カテゴリ（一般、質問、感想など）
+  isPinned Boolean  @default(false)
+  isLocked Boolean  @default(false)
+  viewCount Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments ForumComment[]
+
+  @@map("forum_posts")
+}
+
+// フォーラムコメントテーブル
+model ForumComment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  content   String
+  parentId  Int?     // 親コメントのID（返信の場合）
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  post   ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent ForumComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies ForumComment[] @relation("CommentReplies")
+
+  @@map("forum_comments")
+}
+
+// 既存のモデル（既存のコードを維持）
 model Series {
-  id             Int       @id @default(autoincrement())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id            Int      @id @default(autoincrement())
+  title         String
+  englishTitle  String?
+  romajiTitle   String?
+  description   String?
+  coverImageUrl String?
+  publisherName String?
+  status        String?  // 連載状況（連載中、完結、休載など）
+  startDate     DateTime? // 連載開始日
+  endDate       DateTime? // 連載終了日
+  ageRating     String?  // 年齢制限（全年齢、R15、R18など）
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  title          String
-  englishTitle   String    @default("")
-  romajiTitle    String    @default("")
-  normalizedKey  String    @unique // 検索/同一性用（小文字・空白/記号除去）
-  description    String    @default("")
-  coverImageUrl  String    @default("")
-  publisherName  String    @default("")
+  // リレーション
+  volumes       Volume[]
+  creators      SeriesCreator[]
+  aliases       SeriesAlias[]
+  reviews       Review[]
+  favorites     Favorite[]
+  seriesGenres  SeriesGenre[]
+  seriesTags    SeriesTag[]
 
-  volumes        Volume[]
-  creators       SeriesCreator[]
-  aliases        SeriesAlias[]
-  reviews        Review[]
+  @@map("series")
 }
 
 model Volume {
-  id             Int       @id @default(autoincrement())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id          Int      @id @default(autoincrement())
+  seriesId    Int
+  title       String
+  volumeNumber Int?
+  isbn        String?
+  imageUrl    String?
+  itemUrl     String?
+  description String?
+  releaseDate DateTime?
+  pageCount   Int?
+  price       Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  seriesId       Int
-  series         Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  // リレーション
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  reviews Review[]
 
-  title          String
-  volumeNumber   Int?      // 1,2,3... 解析できない場合はnull
-  isbn           String?   @unique
-  googleVolumeId String    @unique
-  itemUrl        String    @default("")
-  imageUrl       String    @default("")
-  publisherName  String    @default("")
-  description    String    @default("")
-
-  reviews        Review[]
+  @@map("volumes")
 }
 
 model Creator {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  role      String?  // 役割（作者、原作、作画など）
+  bio       String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  series    SeriesCreator[]
+  // リレーション
+  seriesCreators SeriesCreator[]
+
+  @@map("creators")
 }
 
 model SeriesCreator {
+  id        Int      @id @default(autoincrement())
   seriesId  Int
   creatorId Int
-  role      String   // 原作/作画/著者など
+  role      String
+  createdAt DateTime @default(now())
 
-  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  creator   Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  // リレーション
+  series  Series  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
-  @@id([seriesId, creatorId, role])
+  @@unique([seriesId, creatorId])
+  @@map("series_creators")
 }
 
 model SeriesAlias {
   id        Int      @id @default(autoincrement())
   seriesId  Int
-  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  type      String   // alias | english | romaji | other
-  value     String
+  alias     String
+  lang      String?
+  createdAt DateTime @default(now())
 
-  @@unique([seriesId, type, value])
+  // リレーション
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@map("series_aliases")
 }
 
 model Review {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        Int      @id @default(autoincrement())
+  seriesId  Int?
+  volumeId  Int?
+  userId    Int?     // ユーザーIDを追加
+  rating    Int      @default(5)
+  comment   String
+  nickname  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  rating      Int       // 1-5
-  comment     String    @default("")
-  nickname    String    @default("")
+  // リレーション
+  series Series? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  volume Volume? @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes   ReviewLike[]
 
-  seriesId    Int?      
-  series      Series?   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  // @@check(rating >= 1 AND rating <= 5) // SQLiteではサポートされていないためコメントアウト
+  @@map("reviews")
+}
 
-  volumeId    Int?
-  volume      Volume?   @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+model Book {
+  id             Int      @id @default(autoincrement())
+  title          String
+  author         String
+  publisherName  String?
+  itemCaption    String?
+  largeImageUrl  String?
+  itemUrl        String?
+  isbn           String?
+  googleBooksId  String?  // Google Books APIのID
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("books")
 }

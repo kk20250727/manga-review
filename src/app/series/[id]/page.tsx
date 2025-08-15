@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import FavoriteButton from '@/components/FavoriteButton';
 
 // シリーズの巻情報の型定義
 type SeriesVolume = {
@@ -180,6 +181,15 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
               <div className="flex items-center gap-2">
                 <div className="text-2xl font-bold">{averageRating.toFixed(1)}</div>
                 <div className="text-gray-500">({reviews.length} reviews)</div>
+              </div>
+
+              {/* お気に入りボタン */}
+              <div className="mt-4">
+                <FavoriteButton 
+                  seriesId={series.id} 
+                  seriesTitle={series.title}
+                  className="w-full"
+                />
               </div>
             </div>
           </div>

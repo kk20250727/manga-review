@@ -38,9 +38,9 @@ type Series = {
   description: string;
   coverImageUrl: string;
   publisherName: string;
-  volumes: SeriesVolume[];
-  creators: SeriesCreator[];
-  aliases: SeriesAlias[];
+  volumes?: SeriesVolume[]; // オプショナルプロパティに変更
+  creators?: SeriesCreator[]; // オプショナルプロパティに変更
+  aliases?: SeriesAlias[]; // オプショナルプロパティに変更
 };
 
 export default function SeriesAdminPage() {
@@ -213,49 +213,73 @@ export default function SeriesAdminPage() {
                   <div className="grid md:grid-cols-3 gap-6">
                     {/* 巻一覧（最初の3巻のみ表示、残りは件数表示） */}
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Volumes ({series.volumes.length})</h3>
-                      <div className="space-y-2">
-                        {series.volumes.slice(0, 3).map((volume) => (
-                          <div key={volume.id} className="text-sm text-gray-600">
-                            {volume.volumeNumber && `#${volume.volumeNumber}: `}
-                            {volume.title}
-                          </div>
-                        ))}
-                        {series.volumes.length > 3 && (
-                          <div className="text-sm text-gray-400">
-                            +{series.volumes.length - 3} more...
-                          </div>
-                        )}
-                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Volumes ({series.volumes?.length || 0})
+                      </h3>
+                      {series.volumes && series.volumes.length > 0 ? (
+                        <div className="space-y-2">
+                          {series.volumes.slice(0, 3).map((volume) => (
+                            <div key={volume.id} className="text-sm text-gray-600">
+                              {volume.volumeNumber && `#${volume.volumeNumber}: `}
+                              {volume.title}
+                            </div>
+                          ))}
+                          {series.volumes.length > 3 && (
+                            <div className="text-sm text-gray-400">
+                              +{series.volumes.length - 3} more...
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-400">
+                          No volumes available
+                        </div>
+                      )}
                     </div>
 
                     {/* 著者情報 */}
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Creators ({series.creators.length})</h3>
-                      <div className="space-y-1">
-                        {series.creators.map((creator, index) => (
-                          <div key={index} className="text-sm text-gray-600">
-                            {creator.creator.name} ({creator.role})
-                          </div>
-                        ))}
-                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Creators ({series.creators?.length || 0})
+                      </h3>
+                      {series.creators && series.creators.length > 0 ? (
+                        <div className="space-y-1">
+                          {series.creators.map((creator, index) => (
+                            <div key={index} className="text-sm text-gray-600">
+                              {creator.creator.name} ({creator.role})
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-400">
+                          No creators available
+                        </div>
+                      )}
                     </div>
 
                     {/* 別名タイトル（最初の3件のみ表示、残りは件数表示） */}
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Alternative Titles ({series.aliases.length})</h3>
-                      <div className="space-y-1">
-                        {series.aliases.slice(0, 3).map((alias) => (
-                          <div key={alias.id} className="text-sm text-gray-600">
-                            {alias.alias}
-                          </div>
-                        ))}
-                        {series.aliases.length > 3 && (
-                          <div className="text-sm text-gray-400">
-                            +{series.aliases.length - 3} more...
-                          </div>
-                        )}
-                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Alternative Titles ({series.aliases?.length || 0})
+                      </h3>
+                      {series.aliases && series.aliases.length > 0 ? (
+                        <div className="space-y-1">
+                          {series.aliases.slice(0, 3).map((alias) => (
+                            <div key={alias.id} className="text-sm text-gray-600">
+                              {alias.alias}
+                            </div>
+                          ))}
+                          {series.aliases.length > 3 && (
+                            <div className="text-sm text-gray-400">
+                              +{series.aliases.length - 3} more...
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-400">
+                          No alternative titles available
+                        </div>
+                      )}
                     </div>
                   </div>
 
