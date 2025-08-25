@@ -104,22 +104,30 @@ export async function getMangaCoverImage(title: string, author?: string, forceRe
  * Google Books APIでの検索（漫画専用最適化）
  */
 async function searchGoogleBooks(title: string, author?: string): Promise<{url: string, score: number} | null> {
+  console.log(`🔍 Google Books API 開始: ${title}${author ? ` by ${author}` : ''}`);
+  
   const searchQueries = buildMangaSearchQueries(title, author);
+  console.log(`📝 検索クエリ:`, searchQueries);
   
   for (const query of searchQueries) {
     if (!query.trim()) continue;
     
     try {
+      console.log(`🔍 クエリ実行: "${query}"`);
       const result = await searchWithQuery(query, title, author);
       if (result && result.score > 0.4) { // 閾値をさらに緩和
+        console.log(`✅ Google Books API 成功: ${result.url} (スコア: ${result.score})`);
         return result;
+      } else {
+        console.log(`❌ Google Books API スコア不足: ${result?.url || 'なし'} (スコア: ${result?.score || 0})`);
       }
     } catch (error) {
-      console.log(`Google Books query failed: "${query}"`);
+      console.log(`❌ Google Books API クエリ失敗: "${query}"`, error);
       continue;
     }
   }
   
+  console.log(`❌ Google Books API 完全失敗: ${title}`);
   return null;
 }
 
